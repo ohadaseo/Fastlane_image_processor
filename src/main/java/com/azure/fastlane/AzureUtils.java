@@ -31,7 +31,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.security.InvalidKeyException;
 import java.util.UUID;
 
 public class AzureUtils {
@@ -54,14 +56,14 @@ public class AzureUtils {
     public AzureUtils(String blobName, ExecutionContext context) {
         this.blobName = blobName;
         this.blobURL = pendingValidationBlobContainerURL + blobName;
-        this.contextLogging = context;
+        //this.contextLogging = context;
     }
 
 
     public void writeEntryToDBAndMoveToProcessedContainer(String licneseNumber) throws Exception {
-        moveBlobToNewContainer(pendingValidationBlobContainerURL+blobName, processedImagesBlobContainerURL);
+        moveBlobToNewContainer(pendingValidationBlobContainerURL + blobName, "kvish6-processed");
 
-        BillingRecord record = new BillingRecord(processedImagesBlobContainerURL+blobName, licneseNumber);
+        BillingRecord record = new BillingRecord(processedImagesBlobContainerURL + blobName, licneseNumber);
         Gson gson = new Gson();
         final Document doc = Document.parse(gson.toJson(record));
 
@@ -72,29 +74,24 @@ public class AzureUtils {
         contextLogging.getLogger().info("License number found, Added a new entry for "+blobName+", Moving the image to proccesed container");
     }
 
-    public void uploadFileToBlobStorage(String containerName, String blobName, File fileToUpload) {
+    public void uploadFileToBlobStorage(String containerName, String blobName, File fileToUpload) throws Exception {
         CloudStorageAccount storageAccount;
         CloudBlobClient blobClient = null;
         CloudBlobContainer container = null;
 
-        try {
-            storageAccount = CloudStorageAccount.parse(storageAccountConnectionString);
-            blobClient = storageAccount.createCloudBlobClient();
-            container = blobClient.getContainerReference(containerName);
+        storageAccount = CloudStorageAccount.parse(storageAccountConnectionString);
+        blobClient = storageAccount.createCloudBlobClient();
+        container = blobClient.getContainerReference(containerName);
 
-            container.createIfNotExists(BlobContainerPublicAccessType.CONTAINER, new BlobRequestOptions(), new OperationContext());
+        container.createIfNotExists(BlobContainerPublicAccessType.CONTAINER, new BlobRequestOptions(), new OperationContext());
 
-            //Getting a blob reference
-            CloudBlockBlob blob = container.getBlockBlobReference(blobName);
-            uploadedCroppedFileURI = blob.getUri().toString();
-            //Creating blob and uploading file to it
-            contextLogging.getLogger().info("Uploading the cropped file ");
-            blob.uploadFromFile(fileToUpload.getAbsolutePath());
-        } catch (Exception e) {
-            contextLogging.getLogger().info(e.getMessage());
+        //Getting a blob reference
+        CloudBlockBlob blob = container.getBlockBlobReference(blobName);
+        uploadedCroppedFileURI = blob.getUri().toString();
+        //Creating blob and uploading file to it
+        //contextLogging.getLogger().info("Uploading the cropped file ");
 
-        }
-
+        blob.uploadFromFile(fileToUpload.getAbsolutePath());
     }
 
     public static Prediction makePredictionRequest(File rawImage) throws Exception {
@@ -189,8 +186,9 @@ public class AzureUtils {
                 if (ocrResponse.getRegions().size() > 0) {
                     if (ocrResponse.getRegions().get(0).getLines().get(0).getWords().size() > 1) {
                         licenseNumber = ocrResponse.getRegions().get(0).getLines().get(0).getWords().get(1).getText();
+                        contextLogging.getLogger().info("Found license number: "+licenseNumber);
                         contextLogging.getLogger().info("More than 1 result returned from OCR, Moving to manual validation");
-                        throw new Exception("OCR Reponse error, Moving to manual validation");
+                        //throw new Exception("OCR Reponse error, Moving to manual validation");
                     }
                 } else {
                     contextLogging.getLogger().info("No number extracted, Moving to manual validation");
@@ -216,7 +214,7 @@ public class AzureUtils {
     }
 
     public void moveBlobToNewContainer(String sourceBlob, String destinationContainer) throws Exception {
-        File blobForUpload = new File("images/blobForUpload.jpg");
+        File blobForUpload = new File(blobName);
         FileUtils.copyURLToFile(new URL(sourceBlob), blobForUpload);
         uploadFileToBlobStorage(destinationContainer, blobName, blobForUpload);
         contextLogging.getLogger().info("Uploaded file " + blobName + " to "+ destinationContainer);
@@ -238,11 +236,11 @@ public class AzureUtils {
         AzureUtils.blobURL = blobURL;
     }
 
-    public static ExecutionContext getContextLogging() {
+    public static ExecutionContext getcontextLogging() {
         return contextLogging;
     }
 
-    public static void setContextLogging(ExecutionContext contextLogging) {
+    public static void setcontextLogging(ExecutionContext contextLogging) {
         AzureUtils.contextLogging = contextLogging;
     }
 
@@ -253,5 +251,4 @@ public class AzureUtils {
     public static void setBlobContainersBaseURL(String blobContainersBaseURL) {
         AzureUtils.blobContainersBaseURL = blobContainersBaseURL;
     }
-
 }
