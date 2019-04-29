@@ -40,28 +40,9 @@ public class ExtractLicenseNumber {
             @BindingName("name") String blobName,
             final ExecutionContext context
     ) {
-    contextLogging = context;
-            contextLogging.getLogger().info("Java Blob trigger function processed a blob. Name: " + blobName + "\n  Size: " + content.length + " Bytes");
+        contextLogging = context;
+        contextLogging.getLogger().info("Java Blob trigger function processed a blob. Name: " + blobName + "\n  Size: " + content.length + " Bytes");
 
-   /* public static void main(String[] args) {
-        final ExecutionContext contextLogging = new ExecutionContext() {
-            @Override
-            public Logger getLogger() {
-                return null;
-            }
-
-            @Override
-            public String getInvocationId() {
-                return null;
-            }
-
-            @Override
-            public String getFunctionName() {
-                return null;
-            }
-        };
-        String blobName = "test1.jpg";
-    */
         AzureUtils utils = new AzureUtils(blobName, contextLogging);
         try {
             downloadFile(blobName);
@@ -83,19 +64,19 @@ public class ExtractLicenseNumber {
             utils.moveBlobToNewContainer(pendingValidationBlobContainerURL + utils.getBlobName(), "kvish6-manual-validation");
         } catch (Exception e) {
             contextLogging.getLogger().info(e.getMessage());
-            contextLogging.getLogger().info("Failed writing error message for "+ utils.getBlobName());
+            contextLogging.getLogger().info("Failed writing error message for " + utils.getBlobName());
         }
     }
 
 
     private static void cropImageAfterPrediction(File fileToCrop, Prediction prediction) throws IOException {
-            BufferedImage bufferedImage = ImageIO.read(fileToCrop);
-            contextLogging.getLogger().info("Original Image Dimension: " + bufferedImage.getWidth() + "x" + bufferedImage.getHeight());
-            BufferedImage croppedImage = bufferedImage.getSubimage((int) (prediction.boundingBox().left() * 1000.0f) - 50, (int) (prediction.boundingBox().top() * 1000.0f) - 35, (int) (prediction.boundingBox().width() * 1000.0f), (int) (prediction.boundingBox().height() * 1000.0f));
-            contextLogging.getLogger().info("Cropped Image Dimension: " + croppedImage.getWidth() + "x" + croppedImage.getHeight());
-            ExtractLicenseNumber.croppedImage = new File("cropped.jpg");
-            ImageIO.write(croppedImage, "jpg", ExtractLicenseNumber.croppedImage);
-            contextLogging.getLogger().info("Image cropped successfully");
+        BufferedImage bufferedImage = ImageIO.read(fileToCrop);
+        contextLogging.getLogger().info("Original Image Dimension: " + bufferedImage.getWidth() + "x" + bufferedImage.getHeight());
+        BufferedImage croppedImage = bufferedImage.getSubimage((int) (prediction.boundingBox().left() * 1000.0f) - 50, (int) (prediction.boundingBox().top() * 1000.0f) - 35, (int) (prediction.boundingBox().width() * 1000.0f), (int) (prediction.boundingBox().height() * 1000.0f));
+        contextLogging.getLogger().info("Cropped Image Dimension: " + croppedImage.getWidth() + "x" + croppedImage.getHeight());
+        ExtractLicenseNumber.croppedImage = new File("cropped.jpg");
+        ImageIO.write(croppedImage, "jpg", ExtractLicenseNumber.croppedImage);
+        contextLogging.getLogger().info("Image cropped successfully");
     }
 
     private static void downloadFile(String blobName) throws Exception {
