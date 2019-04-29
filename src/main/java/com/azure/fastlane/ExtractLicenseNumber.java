@@ -26,7 +26,7 @@ public class ExtractLicenseNumber {
 
 
     public static void main(String[] args) {
-        String blobName = "test1.jpg";
+        String blobName = "test3.jpg";
     
         AzureUtils utils = new AzureUtils(blobName);
         try {

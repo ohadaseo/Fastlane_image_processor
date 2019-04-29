@@ -5,7 +5,6 @@ import com.microsoft.azure.cognitiveservices.vision.customvision.prediction.Cust
 import com.microsoft.azure.cognitiveservices.vision.customvision.prediction.PredictionEndpoint;
 import com.microsoft.azure.cognitiveservices.vision.customvision.prediction.models.ImagePrediction;
 import com.microsoft.azure.cognitiveservices.vision.customvision.prediction.models.Prediction;
-import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.storage.CloudStorageAccount;
 import com.microsoft.azure.storage.OperationContext;
 import com.microsoft.azure.storage.blob.*;
@@ -85,7 +84,7 @@ public class AzureUtils {
         CloudBlockBlob blob = container.getBlockBlobReference(blobName);
         uploadedCroppedFileURI = blob.getUri().toString();
         //Creating blob and uploading file to it
-        System.out.println("Uploading the cropped file ");
+        System.out.println("Uploading :" +blobName+ " to container: "+containerName);
 
         blob.uploadFromFile(fileToUpload.getAbsolutePath());
     }
