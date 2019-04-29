@@ -31,9 +31,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.security.InvalidKeyException;
 import java.util.UUID;
 
 public class AzureUtils {
@@ -51,12 +49,10 @@ public class AzureUtils {
     private static String croppedImagesBlobContainerURL = blobContainersBaseURL + "kvish6-cropped/";
     private static String processedImagesBlobContainerURL = blobContainersBaseURL + "kvish6-processed/";
 
-    private static ExecutionContext contextLogging;
 
-    public AzureUtils(String blobName, ExecutionContext context) {
+    public AzureUtils(String blobName) {
         this.blobName = blobName;
         this.blobURL = pendingValidationBlobContainerURL + blobName;
-        //this.contextLogging = context;
     }
 
 
@@ -71,7 +67,7 @@ public class AzureUtils {
         MongoDatabase db = mongoClient.getDatabase("kvish6");
         MongoCollection<Document> numbersForBilling = db.getCollection("numbers_for_billing");
         numbersForBilling.insertOne(doc);
-        contextLogging.getLogger().info("License number found, Added a new entry for "+blobName+", Moving the image to proccesed container");
+        System.out.println("License number found, Added a new entry for "+blobName+", Moving the image to proccesed container");
     }
 
     public void uploadFileToBlobStorage(String containerName, String blobName, File fileToUpload) throws Exception {
@@ -89,7 +85,7 @@ public class AzureUtils {
         CloudBlockBlob blob = container.getBlockBlobReference(blobName);
         uploadedCroppedFileURI = blob.getUri().toString();
         //Creating blob and uploading file to it
-        //contextLogging.getLogger().info("Uploading the cropped file ");
+        System.out.println("Uploading the cropped file ");
 
         blob.uploadFromFile(fileToUpload.getAbsolutePath());
     }
@@ -112,7 +108,7 @@ public class AzureUtils {
             fis.read(bytesArray); //read file into bytes[]
             fis.close();
         } catch (IOException e) {
-            contextLogging.getLogger().info(e.getMessage());
+            System.out.println(e.getMessage());
             throw new Exception("Prediction failed, Moving to error handling");
         }
 
@@ -143,14 +139,14 @@ public class AzureUtils {
                 }
             }
         }
-        /*contextLogging.getLogger().info(String.format("\t%s: %.0f%% at: %.0f, %.0f, %.0f, %.0f",
+        System.out.println(String.format("\t%s: %.0f%% at: %.0f, %.0f, %.0f, %.0f",
                 highestScorePrediction.tagName(),
                 highestScorePrediction.probability() * 100.0f,
                 highestScorePrediction.boundingBox().left() * 1000,
                 highestScorePrediction.boundingBox().top() * 1000,
                 highestScorePrediction.boundingBox().width() * 1000,
                 highestScorePrediction.boundingBox().height() * 1000
-        ));*/
+        ));
 
         return highestScorePrediction;
     }
@@ -186,17 +182,17 @@ public class AzureUtils {
                 if (ocrResponse.getRegions().size() > 0) {
                     if (ocrResponse.getRegions().get(0).getLines().get(0).getWords().size() > 1) {
                         licenseNumber = ocrResponse.getRegions().get(0).getLines().get(0).getWords().get(1).getText();
-                        contextLogging.getLogger().info("Found license number: "+licenseNumber);
-                        contextLogging.getLogger().info("More than 1 result returned from OCR, Moving to manual validation");
+                        System.out.println("Found license number: "+licenseNumber);
+                        System.out.println("More than 1 result returned from OCR, Moving to manual validation");
                         //throw new Exception("OCR Reponse error, Moving to manual validation");
                     }
                 } else {
-                    contextLogging.getLogger().info("No number extracted, Moving to manual validation");
+                    System.out.println("No number extracted, Moving to manual validation");
                     throw new Exception("OCR Reponse error, Moving to manual validation");
                 }
             }
         } catch (Exception e) {
-            contextLogging.getLogger().info(e.getMessage());
+            System.out.println(e.getMessage());
             throw new Exception("No license number found, Moving to error handling");
         }
 
@@ -210,14 +206,14 @@ public class AzureUtils {
         queue.createIfNotExists();
         CloudQueueMessage message = new CloudQueueMessage(blobName);
         queue.addMessage(message);
-        contextLogging.getLogger().info("Added a new queue error message for  " + blobName);
+        System.out.println("Added a new queue error message for  " + blobName);
     }
 
     public void moveBlobToNewContainer(String sourceBlob, String destinationContainer) throws Exception {
         File blobForUpload = new File(blobName);
         FileUtils.copyURLToFile(new URL(sourceBlob), blobForUpload);
         uploadFileToBlobStorage(destinationContainer, blobName, blobForUpload);
-        contextLogging.getLogger().info("Uploaded file " + blobName + " to "+ destinationContainer);
+        System.out.println("Uploaded file " + blobName + " to "+ destinationContainer);
     }
 
     public static String getBlobName() {
@@ -234,14 +230,6 @@ public class AzureUtils {
 
     public static void setBlobURL(String blobURL) {
         AzureUtils.blobURL = blobURL;
-    }
-
-    public static ExecutionContext getcontextLogging() {
-        return contextLogging;
-    }
-
-    public static void setcontextLogging(ExecutionContext contextLogging) {
-        AzureUtils.contextLogging = contextLogging;
     }
 
     public static String getBlobContainersBaseURL() {
